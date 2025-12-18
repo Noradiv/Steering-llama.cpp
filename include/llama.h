@@ -662,6 +662,15 @@ extern "C" {
                          int32_t   il_start,
                          int32_t   il_end);
 
+    // Steering vector inspection helpers
+    LLAMA_API int32_t llama_steering_layer_start(const struct llama_context * ctx);
+    LLAMA_API int32_t llama_steering_layer_end  (const struct llama_context * ctx);
+    LLAMA_API int32_t llama_steering_n_embd     (const struct llama_context * ctx);
+
+    // Returns the backing tensor for a given layer (nullptr when not present).
+    // The tensor memory lives for the lifetime of the context and is initialized to zeros by default.
+    LLAMA_API struct ggml_tensor * llama_get_steering_tensor(const struct llama_context * ctx, int32_t il);
+
     //
     // Memory
     //

@@ -107,6 +107,8 @@ bool llama_adapter_cvec::apply(
         return true;
     }
 
+    this->n_embd = n_embd;
+
     if (n_embd != (int) hparams.n_embd) {
         LLAMA_LOG_ERROR("%s: control vector n_embd does not match model\n", __func__);
         return false;
