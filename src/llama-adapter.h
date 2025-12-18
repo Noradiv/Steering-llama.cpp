@@ -17,6 +17,15 @@
 struct llama_adapter_cvec {
     ggml_tensor * tensor_for(int il) const;
 
+    int32_t layer_start_at() const { return layer_start; }
+    int32_t layer_end_at()   const { return layer_end; }
+
+    int32_t embd() const { return n_embd; }
+
+    bool initialized() const { return !tensors.empty(); }
+
+    size_t tensor_count() const { return tensors.size(); }
+
     ggml_tensor * apply_to(ggml_context * ctx, ggml_tensor * cur, int  il) const;
 
     bool apply(
@@ -32,6 +41,8 @@ private:
 
     int32_t layer_start = -1;
     int32_t layer_end   = -1;
+
+    int32_t n_embd = 0;
 
     std::vector<ggml_context_ptr> ctxs;
     std::vector<ggml_backend_buffer_ptr> bufs;

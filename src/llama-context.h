@@ -100,6 +100,12 @@ struct llama_context {
                 int32_t   il_start,
                 int32_t   il_end);
 
+    bool steering_initialized() const;
+    int32_t steering_layer_start() const;
+    int32_t steering_layer_end() const;
+    int32_t steering_n_embd() const;
+    ggml_tensor * steering_tensor(int32_t il) const;
+
     // process a single ubatch with a specific graph type
     // if memory_context is provided, it will be applied first to the context's memory
     // ret contains the status of the graph computation

@@ -456,6 +456,21 @@ llama_context::llama_context(
             LLAMA_LOG_INFO("%s: graph splits = %d (with bs=%d), %d (with bs=1)\n", __func__, n_splits_pp, n_tokens, n_splits_tg);
         }
     }
+
+    // auto-enable steering vectors with a zeroed control vector so external tools
+    // can immediately discover and edit the backing tensors
+    if (!hparams.vocab_only && hparams.n_layer > 1) {
+        const size_t steering_len = (hparams.n_layer - 1) * hparams.n_embd;
+        std::vector<float> steering_zero(steering_len, 0.0f);
+
+        if (!apply_adapter_cvec(steering_zero.data(), steering_zero.size(), hparams.n_embd, 1, hparams.n_layer - 1)) {
+            LLAMA_LOG_WARN("%s: failed to initialize steering vectors\n", __func__);
+        } else {
+            LLAMA_LOG_INFO(
+                "%s: steering vectors initialized for layers [%d, %d] with %d-dim zeros\n",
+                __func__, 1, hparams.n_layer - 1, hparams.n_embd);
+        }
+    }
 }
 
 llama_context::~llama_context() {
@@ -804,6 +819,26 @@ bool llama_context::apply_adapter_cvec(
     LLAMA_LOG_DEBUG("%s: il_start = %d, il_end = %d\n", __func__, il_start, il_end);
 
     return cvec.apply(model, data, len, n_embd, il_start, il_end);
+}
+
+bool llama_context::steering_initialized() const {
+    return cvec.initialized();
+}
+
+int32_t llama_context::steering_layer_start() const {
+    return cvec.layer_start_at();
+}
+
+int32_t llama_context::steering_layer_end() const {
+    return cvec.layer_end_at();
+}
+
+int32_t llama_context::steering_n_embd() const {
+    return cvec.embd();
+}
+
+ggml_tensor * llama_context::steering_tensor(int32_t il) const {
+    return cvec.tensor_for(il);
 }
 
 llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, llm_graph_type gtype, llama_memory_context_i * mctx, ggml_status & ret) {
@@ -2606,6 +2641,22 @@ int32_t llama_apply_adapter_cvec(
     bool res = ctx->apply_adapter_cvec(data, len, n_embd, il_start, il_end);
 
     return res ? 0 : -1;
+}
+
+int32_t llama_steering_layer_start(const llama_context * ctx) {
+    return ctx->steering_layer_start();
+}
+
+int32_t llama_steering_layer_end(const llama_context * ctx) {
+    return ctx->steering_layer_end();
+}
+
+int32_t llama_steering_n_embd(const llama_context * ctx) {
+    return ctx->steering_n_embd();
+}
+
+ggml_tensor * llama_get_steering_tensor(const llama_context * ctx, int32_t il) {
+    return ctx->steering_tensor(il);
 }
 
 //
